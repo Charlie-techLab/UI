@@ -7,6 +7,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import ni.edu.uca.listadoprod.dataadapter.ProductoAdapter
 import ni.edu.uca.listadoprod.databinding.ActivityMainBinding
 import ni.edu.uca.listadoprod.dataclass.Producto
+import android.text.Editable
+import java.lang.Exception
 
 class MainActivity : AppCompatActivity() {
 
@@ -16,10 +18,14 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
         iniciar()
+
+
     }
-    private fun limpiar(){
-        with(binding){
+
+    private fun limpiar() {
+        with(binding) {
             etID.setText("")
             etNombreProd.setText("")
             etPrecio.setText("")
@@ -35,47 +41,56 @@ class MainActivity : AppCompatActivity() {
                 val precio: Double = etPrecio.text.toString().toDouble()
                 val prod = Producto(id, nombre, precio)
                 listaProd.add(prod)
-            }catch (ex: Exception){
-                Toast.makeText(this@MainActivity, "Error: ${ex.toString()} ",
-                Toast.LENGTH_LONG).show()
+            } catch (ex: Exception) {
+
+                Toast.makeText(
+                    this@MainActivity, "Por favor completar los campos.",
+                    Toast.LENGTH_LONG
+                ).show()
             }
+
             rcvLista.layoutManager = LinearLayoutManager(this@MainActivity)
-            rcvLista.adapter = ProductoAdapter(listaProd, binding)
+            rcvLista.adapter = ProductoAdapter(listaProd,
+                {producto -> selectItem(producto)},
+                {position -> eliminarProd(position) },
+                {position -> editarProd(position)})
             limpiar()
         }
+
     }
 
-    private fun editarProd() {
-        try {
-            var index: Int = 0
-            with(binding) {
-                if (etID.text.toString() != "" && etNombreProd.text.toString() != "" &&
-                    etNombreProd.text.toString() != ""
-                ) {
-                    for (p in listaProd) {
-                        if (p.id == etID.text.toString().toInt()) {
-                            listaProd[index].nombre = etNombreProd.text.toString()
-                            listaProd[index].precio = etPrecio.text.toString().toDouble()
-                            rcvLista.layoutManager = LinearLayoutManager(this@MainActivity)
-                            rcvLista.adapter = ProductoAdapter(listaProd, binding)
-                            limpiar()
-                            break
-                        }
-                        index++
-                    }
+    private fun eliminarProd(position: Int) {
+        with(binding){
+            listaProd.removeAt(position)
+            rcvLista.adapter?.notifyItemRemoved(position)
+        }
+        limpiar()
+    }
 
-                }
-                if (index == listaProd.size) {
-                    throw Exception("El registro no existe")
-                }
-            }
-        } catch (ex: Exception) {
-            Toast.makeText(
-                this@MainActivity, "Error: ${ex.toString()} ",
-                Toast.LENGTH_LONG
-            ).show()
+    private fun selectItem(producto: Producto){
+        with(binding){
+            etID.text = producto.id.toString().toEditable()
+            etNombreProd.text = producto.nombre.toEditable()
+            etPrecio.text = producto.precio.toString().toEditable()
         }
     }
+
+    fun String.toEditable(): Editable = Editable.Factory.getInstance().newEditable(this)
+
+    fun editarProd(position: Int){
+        with(binding){
+            val id: Int = etID.text.toString().toInt()
+            val nombre: String = etNombreProd.text.toString()
+            val precio: Double = etPrecio.text.toString().toDouble()
+            val prod = Producto(id, nombre, precio)
+            listaProd.set(position, prod)
+            rcvLista.adapter?.notifyItemChanged(position)
+        }
+
+        limpiar()
+    }
+
+
     private fun iniciar() {
         binding.btnAgregar.setOnClickListener {
             agregarProd()
@@ -83,5 +98,10 @@ class MainActivity : AppCompatActivity() {
         binding.btnLimpiar.setOnClickListener {
             limpiar()
         }
+
+
+
+
     }
+
 }
